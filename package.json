@@ -1,0 +1,32 @@
+{
+    "name": "super-simple-i18n",
+    "version": "1.0.0",
+    "description": "",
+    "main": "dist/index.js",
+    "devDependencies": {
+        "esbuild": "^0.14.8",
+        "globby": "^12.0.2",
+        "typescript": "^4.5.4"
+    },
+    "scripts": {
+        "server": "node esmbuild server ./src 8000",
+        "build": "node esmbuild build ./src dist"
+    },
+    "keywords": [
+        "i18n",
+        "localization",
+        "internalization",
+        "esm"
+    ],
+    "type": "module",
+    "author": "alexssh",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/alexssh/super-simple-i18n.git"
+    },
+    "bugs": {
+        "url": "https://github.com/alexssh/super-simple-i18n/issues"
+    },
+    "homepage": "https://github.com/alexssh/super-simple-i18n#readme"
+}
