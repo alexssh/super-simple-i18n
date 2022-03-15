@@ -5,7 +5,7 @@ Simple, lightweight, and easy to use, i18n translation for Node.js for non-produ
 ## Key features
 
 - **Default Locale** - using the default locale as a fallback
-- **Fallback** - returning specified string in case of any error
+- **Fallback** - returning specified string in case of any critical error
 - **Pluralization** - plural key selection, based on `Intl.PluralRules`
 - **Replacement Parameters** - supporting replaceable text through named parameters and consistent replacement
 - **Non-throwing errors** - non-disruptive compilation errors
@@ -105,6 +105,9 @@ const settings = {
                 },
             },
         },
+        "fr-FR": {
+            greetings: "Bonjour!"
+        }
     },
 }
 
@@ -159,8 +162,27 @@ t("nested.replace.template", {
     }
 })
 // -> 'Hello Kate and James!'
+
+
+// Fallbacks
+
+t("string", {
+    locale: "fr-FR",
+    defaultLocale: "en-EN",
+    content: settings.content
+})
+// -> 'Hello world!'
+
+t("something", {
+    locale: "fr-FR",
+    defaultLocale: "en-EN",
+    content: settings.content,
+    fallback: "ERR"
+})
+// -> 'ERR'
 ```
 
 ## Changelog
 
+- 1.0.1: defaultLocale as fallback bugfix
 - 1.0.0: initial stable release
