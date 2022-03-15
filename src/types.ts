@@ -12,6 +12,7 @@ export type Translation = {
     str: any
     key: Key
     content: Content
+    defaultContent: Content
     fallback: string
 }
 

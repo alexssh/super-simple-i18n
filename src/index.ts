@@ -24,6 +24,7 @@ export const translate = (inputKey: string, options?: Options): string => {
         str: '',
         key: key,
         content: content,
+        defaultContent: content,
         fallback: options?.fallback ?? ''
     }
 
@@ -51,11 +52,19 @@ export const translate = (inputKey: string, options?: Options): string => {
         !options?.silent && console.warn(`${MODULE_NAME} 'options.content' is not defined`, { inputKey, options, t })
         return t.fallback
     } else {
-        t.content = getContent(t, options)
+        const res: Content[] = getContent(t, options)
+        t.content = res[0]
+        t.defaultContent = res[1]
     }
 
     if (t.content.valid) {
-        t.key = getKey(t)
+        t.key = getKey(t, t.content)
+        
+        if (!t.key.valid && t.defaultContent.valid) {
+            t.key.valid = true
+            t.key = getKey(t, t.defaultContent)
+        }
+
         if (t.key.valid) {
             if ((t.key.replacements === undefined) !== t.key.replacements?.valid) {
                 if (t.key.plural !== undefined) {
@@ -127,7 +136,7 @@ export const translate = (inputKey: string, options?: Options): string => {
                 return t.fallback
             }
         } else {
-            console.warn(`${MODULE_NAME} 'content' does not contain 'key'`, {
+            console.warn(`${MODULE_NAME} 'content' or 'defaultContent' does not contain 'key'`, {
                 inputKey,
                 options,
                 t
@@ -147,29 +156,28 @@ export const translate = (inputKey: string, options?: Options): string => {
 
 //
 
-const getContent = (t: Translation, options: Options): Content => {
-    if (options.content.hasOwnProperty(options.locale)) {
-        t.content.valid = true
-        t.content.dict = options.content[options.locale]
-        t.content.locale = options.locale
+const getContent = (t: Translation, options: Options): Content[] => {
+    let content: Content = { valid: false, dict: undefined, locale: undefined }
+    let defaultContent: Content = { valid: false, dict: undefined, locale: undefined }
 
-        return t.content
+    if (options.content.hasOwnProperty(options.locale)) {
+        content.valid = true
+        content.dict = options.content[options.locale]
+        content.locale = options.locale
     }
 
     if (options.content.hasOwnProperty(options.defaultLocale)) {
-        t.content.valid = true
-        t.content.dict = options.content[options.defaultLocale]
-        t.content.locale = options.defaultLocale
-
-        return t.content
+        defaultContent.valid = true
+        defaultContent.dict = options.content[options.defaultLocale]
+        defaultContent.locale = options.defaultLocale
     }
 
-    return t.content
+    return [content, defaultContent]
 }
 
-const getKey = (t: Translation): Key => {
+const getKey = (t: Translation, content : Content): Key => {
     if (typeof t.key.value === 'string') {
-        t.key.selected = t.content.dict
+        t.key.selected = content.dict
         t.key = t.key.value.split('.').reduce((prev: Key, current: string): Key => {
             if (prev.valid) {
                 if (prev.selected.hasOwnProperty(current)) {
