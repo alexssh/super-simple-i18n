@@ -18,11 +18,11 @@ Simple, lightweight, and easy to use, i18n translation for Node.js for non-produ
 Install the package: `npm i super-simple-i18n`
 
 ```js
-import { t } form "super-simple-i18n"
+import { t } from "super-simple-i18n"
 
 // or
 
-import { translate } form "super-simple-i18n"
+import { translate } from "super-simple-i18n"
 ```
 
 ## Options
