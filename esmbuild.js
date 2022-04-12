@@ -1,6 +1,7 @@
 import { join, resolve } from "path"
 import esbuild from "esbuild"
 import { globby } from "globby"
+import { nodeExternalsPlugin } from 'esbuild-node-externals'
 
 const color = (n, v) => `\x1b[${n}m${v}\x1b[0m`
 
@@ -15,7 +16,8 @@ async function getOptions(path) {
         minify: true,
         format: "esm",
         bundle: true,
-        target: ["es2020"]
+        target: ["es2020"],
+        plugins: [nodeExternalsPlugin()]
     }
 }
 

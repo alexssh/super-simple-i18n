@@ -1,15 +1,17 @@
 export type Options = {
     locale: string
     defaultLocale: string
-    content: { [propName: string]: any }
+    content: { [locale: string | number]: OptionsContent }
     plural: string | number | undefined
     replacements: ReplacementsArray | ReplacementsTemplate | undefined
     fallback: string | undefined
     silent?: boolean
 }
 
+export type OptionsContent = { [key: string | number]: string } | string 
+
 export type Translation = {
-    str: any
+    str: OptionsContent | undefined
     key: Key
     content: Content
     defaultContent: Content
@@ -19,14 +21,14 @@ export type Translation = {
 export type Key = {
     valid: boolean
     value: string | undefined
-    selected: any | undefined
+    selected: OptionsContent | undefined
     plural: boolean | undefined
     replacements: Replacements | undefined
 }
 
 export type Content = {
     valid: boolean
-    dict: any
+    dict: OptionsContent | undefined
     locale: string | undefined
 }
 
@@ -35,6 +37,6 @@ export type Replacements = {
     type: string | undefined
 }
 
-export type ReplacementsTemplate = { [propName: string]: string }
+export type ReplacementsTemplate = { [key: string | number]: string }
 
 export type ReplacementsArray = string[]

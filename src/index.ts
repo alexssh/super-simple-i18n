@@ -1,6 +1,6 @@
-import { Options, Content, Key, Translation, Replacements, ReplacementsTemplate, ReplacementsArray } from './types'
+import { Options, OptionsContent, Content, Key, Translation, Replacements, ReplacementsTemplate, ReplacementsArray } from './types'
 
-const MODULE_NAME: string = '[super-simple-i18n]'
+const MODULE_NAME: string = '[super-simple-i18n - 1.0.2]'
 const PLURAL_KEYS: string[] = ['zero', 'one', 'two', 'few', 'many']
 const REPLACEMENT_REGEX_TEMPLATE: RegExp = /(?<=\{{).+?(?=\}})/gi
 const REPLACEMENT_REGEX_ARRAY: RegExp = /\%d|\%i|\%ld|\%s|%@/i
@@ -52,7 +52,7 @@ export const translate = (inputKey: string, options?: Options): string => {
         !options?.silent && console.warn(`${MODULE_NAME} 'options.content' is not defined`, { inputKey, options, t })
         return t.fallback
     } else {
-        const res: Content[] = getContent(t, options)
+        const res: Content[] = getContent(options)
         t.content = res[0]
         t.defaultContent = res[1]
     }
@@ -123,7 +123,7 @@ export const translate = (inputKey: string, options?: Options): string => {
                         return t.fallback
                     }
                 }
-                return t.str
+                return t.str as string
             } else {
                 console.warn(
                     `${MODULE_NAME} 'key' does not have consistent replacements, use {{name}} or - like values`,
@@ -156,7 +156,7 @@ export const translate = (inputKey: string, options?: Options): string => {
 
 //
 
-const getContent = (t: Translation, options: Options): Content[] => {
+const getContent = (options: Options): Content[] => {
     let content: Content = { valid: false, dict: undefined, locale: undefined }
     let defaultContent: Content = { valid: false, dict: undefined, locale: undefined }
 
@@ -178,13 +178,13 @@ const getContent = (t: Translation, options: Options): Content[] => {
 const getKey = (t: Translation, content : Content): Key => {
     if (typeof t.key.value === 'string') {
         t.key.selected = content.dict
-        t.key = t.key.value.split('.').reduce((prev: Key, current: string): Key => {
+        t.key = t.key.value.split('.').reduce((prev: Key, current: number | string): Key => {
             if (prev.valid) {
-                if (prev.selected.hasOwnProperty(current)) {
+                if (prev.selected?.hasOwnProperty(current)) {
                     return <Key>{
                         ...t.key,
                         valid: true,
-                        selected: prev.selected[current]
+                        selected: prev.selected[current as keyof OptionsContent]
                     }
                 } else {
                     return <Key>{
@@ -207,7 +207,7 @@ const getKey = (t: Translation, content : Content): Key => {
 
 const checkPluralization = (key: Key): boolean | undefined => {
     if (typeof key.selected === 'object' && !key.selected.length) {
-        return Object.keys(key.selected).some((el: any) => (typeof el === 'string' ? PLURAL_KEYS.includes(el) : false))
+        return Object.keys(key.selected).some((el: OptionsContent) => (typeof el === 'string' ? PLURAL_KEYS.includes(el) : false))
     }
 
     return undefined
@@ -215,20 +215,20 @@ const checkPluralization = (key: Key): boolean | undefined => {
 
 const checkReplacements = (key: Key): Replacements | undefined => {
     if (key.plural) {
-        let elements = Object.values(key.selected)
-            .map((el: any) => (typeof el === 'string' ? parseReplacements(el) : undefined))
-            .filter((el: any) => el !== undefined)
+        let elements = Object.values(key.selected as OptionsContent | string)
+            .map((el: OptionsContent) => (typeof el === 'string' ? parseReplacements(el) : undefined))
+            .filter((el: Replacements) => el !== undefined)
 
         if (elements.length) {
             return <Replacements>{
-                valid: elements.every((el: any) => el.valid),
+                valid: elements.every((el: Replacements) => el.valid),
                 type:
-                    elements.some((el: any) => (el.type ? el.type.includes('template') : false)) &&
-                    elements.some((el: any) => (el.type ? el.type.includes('array') : false))
+                    elements.some((el: Replacements) => (el.type ? el.type.includes('template') : false)) &&
+                    elements.some((el: Replacements) => (el.type ? el.type.includes('array') : false))
                         ? undefined
-                        : elements.every((el: any) => (el.type ? el.type.includes('template') : false))
+                        : elements.every((el: Replacements) => (el.type ? el.type.includes('template') : false))
                         ? 'template'
-                        : elements.every((el: any) => (el.type ? el.type.includes('array') : false))
+                        : elements.every((el: Replacements) => (el.type ? el.type.includes('array') : false))
                         ? 'array'
                         : undefined
             }
@@ -255,36 +255,39 @@ const parseReplacements = (str: string): Replacements | undefined => {
 }
 
 const getPluralFromKey = (t: Translation, options: Options): string => {
+
     let pluralKey =
         typeof options.plural === 'string'
-            ? options.plural
-            : new Intl.PluralRules(t.content.locale).select(<number>options.plural)
+            ? options.plural 
+            : new Intl.PluralRules(t.content.locale).select(options.plural as number)
 
-    return t.key.selected.hasOwnProperty(pluralKey) ? t.key.selected[pluralKey] : ''
+    return t.key.selected?.hasOwnProperty(pluralKey) ? t.key.selected[pluralKey as any] : ''
 }
 
 const replaceByTemplate = (t: Translation, options: Options): string => {
     const replacementsLink: ReplacementsTemplate | undefined = options?.replacements as ReplacementsTemplate
 
+    let str = t.str as string
+
     return replacementsLink
-        ? t.str.match(REPLACEMENT_REGEX_TEMPLATE).reduce((prev: string, current: keyof ReplacementsTemplate) => {
+        ? str.match(REPLACEMENT_REGEX_TEMPLATE).reduce((prev: string, current: keyof ReplacementsTemplate) : string => {
               if (replacementsLink?.hasOwnProperty(current)) {
                   return prev.replace(new RegExp(`{{${current}}}`, 'gi'), String(replacementsLink?.[current]))
               } else {
                   return prev
               }
-          }, t.str)
-        : t.str
+          }, str)
+        : str
 }
 
 const replaceByArray = (t: Translation, options: Options): string => {
     const replacementsLink: ReplacementsArray | undefined = options?.replacements as ReplacementsArray
 
     return replacementsLink
-        ? replacementsLink.reduce((prev: string, current: string) => {
+        ? replacementsLink.reduce((prev: string, current: string) : string => {
               return prev.replace(REPLACEMENT_REGEX_ARRAY, String(current).trim())
-          }, t.str)
-        : t.str
+          }, t.str as string)
+        : t.str as string
 }
 
 export const t = translate
