@@ -1,11 +1,14 @@
 import { Options, OptionsContent, Content, Key, Translation, Replacements, ReplacementsTemplate, ReplacementsArray } from './types'
 
-const MODULE_NAME: string = '[super-simple-i18n - 1.0.2]'
+const MODULE_NAME = '[super-simple-i18n - 1.0.3]'
 const PLURAL_KEYS: string[] = ['zero', 'one', 'two', 'few', 'many']
-const REPLACEMENT_REGEX_TEMPLATE: RegExp = /(?<=\{{).+?(?=\}})/gi
-const REPLACEMENT_REGEX_ARRAY: RegExp = /\%d|\%i|\%ld|\%s|%@/i
+const REPLACEMENT_REGEX_TEMPLATE = /(?<=\{{).+?(?=\}})/gi
+const REPLACEMENT_REGEX_ARRAY = /%d|%i|%ld|%s|%@/i
+
+// Function
 
 export const translate = (inputKey: string, options?: Options): string => {
+    
     const content: Content = {
         valid: false,
         dict: undefined,
@@ -28,9 +31,62 @@ export const translate = (inputKey: string, options?: Options): string => {
         fallback: options?.fallback ?? ''
     }
 
+    const parsed = parseInput(inputKey, t, options)
+
+    return parsed.key.valid ? parsed.str as string : parsed.fallback
+
+}
+
+// Class
+
+export class Translate {
+    inputKey: string
+    options: Options
+    t: Translation
+
+    constructor(inputKey: string, options?: Options) {
+
+        this.inputKey = inputKey
+        this.options = options
+        this.t = parseInput(
+            this.inputKey, 
+            {
+                str: '',
+                key: {
+                    valid: false,
+                    value: undefined,
+                    selected: undefined,
+                    plural: undefined,
+                    replacements: undefined
+                },
+                content: {
+                    valid: false,
+                    dict: undefined,
+                    locale: undefined
+                },
+                defaultContent: {
+                    valid: false,
+                    dict: undefined,
+                    locale: undefined
+                },
+                fallback: options?.fallback ?? ''
+            },
+            this.options
+        )
+    }
+
+    format() {
+        return this.t.key.valid ? this.t.str as string : this.t.fallback
+    }
+}
+
+// Methods
+
+const parseInput = (inputKey: string, t: Translation, options?: Options) => {
+    
     if (!inputKey) {
         !options?.silent && console.warn(`${MODULE_NAME} 'key' is not defined`, { inputKey, options, t })
-        return t.fallback
+        return t // fb
     } else {
         t.key.valid = true
         t.key.value = inputKey
@@ -44,13 +100,13 @@ export const translate = (inputKey: string, options?: Options): string => {
                     options,
                     t
                 })
-            return t.fallback
+            return t
         }
     }
 
     if (!options?.content) {
         !options?.silent && console.warn(`${MODULE_NAME} 'options.content' is not defined`, { inputKey, options, t })
-        return t.fallback
+        return t
     } else {
         const res: Content[] = getContent(options)
         t.content = res[0]
@@ -72,7 +128,8 @@ export const translate = (inputKey: string, options?: Options): string => {
                         options?.plural &&
                         (typeof options?.plural === 'string' || typeof options?.plural === 'number')
                     ) {
-                        t.str = getPluralFromKey(t, options)
+                        const pluralKey = getPlural(t, options)
+                        t.str = Object.prototype.hasOwnProperty.call(t.key.selected, pluralKey) ? t.key.selected[pluralKey as keyof OptionsContent] as string : ''
 
                         if (!t.str.length) {
                             !options?.silent &&
@@ -81,7 +138,7 @@ export const translate = (inputKey: string, options?: Options): string => {
                                     options,
                                     t
                                 })
-                            return t.fallback
+                           return t
                         }
                     } else {
                         !options?.silent &&
@@ -93,7 +150,7 @@ export const translate = (inputKey: string, options?: Options): string => {
                                     t
                                 }
                             )
-                        return t.fallback
+                        return t 
                     }
                 }
 
@@ -120,10 +177,10 @@ export const translate = (inputKey: string, options?: Options): string => {
                                     t
                                 }
                             )
-                        return t.fallback
+                        return t 
                     }
                 }
-                return t.str as string
+                return t 
             } else {
                 console.warn(
                     `${MODULE_NAME} 'key' does not have consistent replacements, use {{name}} or - like values`,
@@ -133,7 +190,7 @@ export const translate = (inputKey: string, options?: Options): string => {
                         t
                     }
                 )
-                return t.fallback
+               return t 
             }
         } else {
             console.warn(`${MODULE_NAME} 'content' or 'defaultContent' does not contain 'key'`, {
@@ -141,7 +198,7 @@ export const translate = (inputKey: string, options?: Options): string => {
                 options,
                 t
             })
-            return t.fallback
+           return t 
         }
     } else {
         !options?.silent &&
@@ -150,23 +207,21 @@ export const translate = (inputKey: string, options?: Options): string => {
                 options,
                 t
             })
-        return t.fallback
+       return t 
     }
 }
 
-//
-
 const getContent = (options: Options): Content[] => {
-    let content: Content = { valid: false, dict: undefined, locale: undefined }
-    let defaultContent: Content = { valid: false, dict: undefined, locale: undefined }
+    const content: Content = { valid: false, dict: undefined, locale: undefined }
+    const defaultContent: Content = { valid: false, dict: undefined, locale: undefined }
 
-    if (options.content.hasOwnProperty(options.locale)) {
+    if (Object.prototype.hasOwnProperty.call(options.content, options.locale)) {
         content.valid = true
         content.dict = options.content[options.locale]
         content.locale = options.locale
     }
 
-    if (options.content.hasOwnProperty(options.defaultLocale)) {
+    if (Object.prototype.hasOwnProperty.call(options.content, options.defaultLocale)) {
         defaultContent.valid = true
         defaultContent.dict = options.content[options.defaultLocale]
         defaultContent.locale = options.defaultLocale
@@ -180,7 +235,7 @@ const getKey = (t: Translation, content : Content): Key => {
         t.key.selected = content.dict
         t.key = t.key.value.split('.').reduce((prev: Key, current: number | string): Key => {
             if (prev.valid) {
-                if (prev.selected?.hasOwnProperty(current)) {
+                if (Object.prototype.hasOwnProperty.call(prev.selected, current)) {
                     return <Key>{
                         ...t.key,
                         valid: true,
@@ -215,7 +270,7 @@ const checkPluralization = (key: Key): boolean | undefined => {
 
 const checkReplacements = (key: Key): Replacements | undefined => {
     if (key.plural) {
-        let elements = Object.values(key.selected as OptionsContent | string)
+        const elements = Object.values(key.selected as OptionsContent | string)
             .map((el: OptionsContent) => (typeof el === 'string' ? parseReplacements(el) : undefined))
             .filter((el: Replacements) => el !== undefined)
 
@@ -243,8 +298,8 @@ const checkReplacements = (key: Key): Replacements | undefined => {
 }
 
 const parseReplacements = (str: string): Replacements | undefined => {
-    let template = Boolean(str.match(REPLACEMENT_REGEX_TEMPLATE))
-    let array = Boolean(str.match(REPLACEMENT_REGEX_ARRAY))
+    const template = Boolean(str.match(REPLACEMENT_REGEX_TEMPLATE))
+    const array = Boolean(str.match(REPLACEMENT_REGEX_ARRAY))
 
     return !template && !array
         ? undefined
@@ -254,24 +309,20 @@ const parseReplacements = (str: string): Replacements | undefined => {
           }
 }
 
-const getPluralFromKey = (t: Translation, options: Options): string => {
-
-    let pluralKey =
-        typeof options.plural === 'string'
-            ? options.plural 
+const getPlural = (t: Translation, options: Options): string => {
+    return typeof options.plural === 'string'
+            ? options.plural
             : new Intl.PluralRules(t.content.locale).select(options.plural as number)
-
-    return t.key.selected?.hasOwnProperty(pluralKey) ? t.key.selected[pluralKey as any] : ''
 }
 
 const replaceByTemplate = (t: Translation, options: Options): string => {
     const replacementsLink: ReplacementsTemplate | undefined = options?.replacements as ReplacementsTemplate
 
-    let str = t.str as string
+    const str = t.str as string
 
     return replacementsLink
         ? str.match(REPLACEMENT_REGEX_TEMPLATE).reduce((prev: string, current: keyof ReplacementsTemplate) : string => {
-              if (replacementsLink?.hasOwnProperty(current)) {
+              if (Object.prototype.hasOwnProperty.call(replacementsLink, current)) {
                   return prev.replace(new RegExp(`{{${current}}}`, 'gi'), String(replacementsLink?.[current]))
               } else {
                   return prev
@@ -290,4 +341,7 @@ const replaceByArray = (t: Translation, options: Options): string => {
         : t.str as string
 }
 
+// Exports
+
 export const t = translate
+export const T = Translate

@@ -10,6 +10,7 @@ Simple, lightweight, and easy to use, i18n translation for Node.js for non-produ
 - **Replacement Parameters** - supporting replaceable text through named parameters and consistent replacement
 - **Non-throwing errors** - non-disruptive compilation errors
 - **Silent mode** - hiding any warning and errors in the console
+- **Functions or Classes** - choose any style of using you need or like
 
 ---
 
@@ -18,11 +19,15 @@ Simple, lightweight, and easy to use, i18n translation for Node.js for non-produ
 Install the package: `npm i super-simple-i18n`
 
 ```js
+// Functions
 import { t } from "super-simple-i18n"
-
 // or
-
 import { translate } from "super-simple-i18n"
+
+// Classes
+import { T } from "super-simple-i18n"
+// or
+import { Translate } from "super-simple-i18n"
 ```
 
 ## Options
@@ -34,6 +39,8 @@ import { translate } from "super-simple-i18n"
 - `replacements : string[] | { [propName: string]: string } | undefined` - replacement options
 - `fallback : string | undefined` - a string returned in case of errors
 - `silent : boolean` - hiding alerts in the console
+
+#### Functions
 
 ```js
 // Full set of options
@@ -69,6 +76,48 @@ t("project.key", {
         }
     }
 })
+// -> 'Bonjour le monde !'
+```
+
+#### Classes
+
+```js
+// Full set of options
+
+let TClass = T("project.key", {
+    locale: 'fr-FR',
+    defaultLocale: 'en-EN',
+    content: {
+        'en-EN': {
+            'project.key': 'Hello world!'
+        },
+        'fr-FR': {
+            'project.key': 'Bonjour le monde !'
+        }
+    },
+    plural: undefined,
+    replacements: undefined,
+    fallback: 'Hello world!',
+    silent: false
+}) // Translation class ititilization
+
+TClass.format() 
+// The format() method returns the translated string 
+// -> 'Bonjour le monde !'
+
+// Minimum set of options
+
+t("project.key", {
+    locale: 'fr-FR',
+    content: {
+        'en-EN': {
+            'project.key': 'Hello world!'
+        },
+        'fr-FR': {
+            'project.key': 'Bonjour le monde !'
+        }
+    }
+}).format()
 // -> 'Bonjour le monde !'
 ```
 
@@ -184,5 +233,7 @@ t("something", {
 
 ## Changelog
 
-- 1.0.1: defaultLocale as fallback bugfix
-- 1.0.0: initial stable release
+- 1.0.3: Class usage
+- 1.0.2: Refactoring and fixes
+- 1.0.1: DefaultLocale as fallback bugfix
+- 1.0.0: Initial stable release
